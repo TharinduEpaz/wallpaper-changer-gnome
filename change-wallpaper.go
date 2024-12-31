@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 type BingResponse struct {
@@ -14,6 +16,25 @@ type BingResponse struct {
 }
 
 func main() {
+	// Get user preference for theme
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Are you using dark theme? (yes/no): ")
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Error reading input:", err)
+		return
+	}
+
+	// Clean the input
+	response = strings.TrimSpace(strings.ToLower(response))
+	
+	// Determine which gsettings key to use
+	settingKey := "picture-uri"
+	if response == "yes" || response == "y" {
+		settingKey = "picture-uri-dark"
+	} else {
+		settingKey = "picture-uri"
+	}
 
 	// Download the image
 	imgResp, err := http.Get("https://unsplash.it/1920/1080/?random")
@@ -43,7 +64,7 @@ func main() {
 	}
 
 	// Set wallpaper using gsettings
-	cmd := exec.Command("gsettings", "set", "org.gnome.desktop.background", "picture-uri-dark", 
+	cmd := exec.Command("gsettings", "set", "org.gnome.desktop.background", settingKey, 
 		fmt.Sprintf("file://%s", wallpaperPath))
 	if err := cmd.Run(); err != nil {
 		fmt.Println("Error setting wallpaper:", err)
